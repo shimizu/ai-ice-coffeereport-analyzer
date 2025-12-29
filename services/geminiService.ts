@@ -62,7 +62,7 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
 
     # Output Requirements
     出力はJSON形式で、以下の情報を詳細に含めてください。
-    テキストはすべて日本語で出力してください。
+    **重要: すべてのテキストフィールド（summary, headline, details, insightなど）は、必ず【日本語】で記述してください。英語での出力は禁止です。**
   `;
 
   /**
@@ -115,35 +115,35 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
             properties: {
               sentiment: { type: Type.STRING, enum: ["Strong Bullish", "Bullish", "Neutral", "Bearish", "Strong Bearish"] },
               bullish_bearish_score: { type: Type.NUMBER, description: "-100(Bearish) to 100(Bullish)" },
-              headline: { type: Type.STRING, description: "最大の注目点" },
-              text: { type: Type.STRING, description: "要約テキスト" }
+              headline: { type: Type.STRING, description: "最大の注目点 (日本語)" },
+              text: { type: Type.STRING, description: "要約テキスト (日本語)" }
             },
             required: ["sentiment", "bullish_bearish_score", "headline", "text"]
           },
           key_metrics: {
             type: Type.OBJECT,
             properties: {
-              fresh_vs_transition_ratio: { type: Type.STRING, description: "フレッシュ在庫 vs 移行在庫の比率評価" },
-              change_from_previous: { type: Type.STRING, description: "前日比やトレンドの記述" }
+              fresh_vs_transition_ratio: { type: Type.STRING, description: "フレッシュ在庫 vs 移行在庫の比率評価 (日本語)" },
+              change_from_previous: { type: Type.STRING, description: "前日比やトレンドの記述 (日本語)" }
             },
             required: ["fresh_vs_transition_ratio", "change_from_previous"]
           },
           deep_dive_analysis: {
             type: Type.OBJECT,
             properties: {
-              geo_logistics_risk: { type: Type.STRING, description: "地理的・物流リスク分析" },
-              supply_demand_insight: { type: Type.STRING, description: "需給インサイト" }
+              geo_logistics_risk: { type: Type.STRING, description: "地理的・物流リスク分析 (日本語)" },
+              supply_demand_insight: { type: Type.STRING, description: "需給インサイト (日本語)" }
             },
             required: ["geo_logistics_risk", "supply_demand_insight"]
           },
           engineering_suggestions: {
             type: Type.ARRAY,
             items: { type: Type.STRING },
-            description: "エンジニア向け可視化・データ取得提案"
+            description: "エンジニア向け可視化・データ取得提案 (日本語)"
           },
           // 互換性維持のためのフィールド
-          summary: { type: Type.STRING },
-          key_points: { type: Type.ARRAY, items: { type: Type.STRING } }
+          summary: { type: Type.STRING, description: "全体要約 (日本語)" },
+          key_points: { type: Type.ARRAY, items: { type: Type.STRING }, description: "重要ポイント (日本語)" }
         },
         required: ["report_date", "total_bags", "warehouses", "grading", "executive_summary", "key_metrics", "deep_dive_analysis", "engineering_suggestions", "summary", "key_points"]
       },
@@ -152,10 +152,11 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
         properties: {
           score: { type: Type.NUMBER },
           status: { type: Type.STRING, enum: ["positive", "neutral", "negative", "warning"] },
-          details: { type: Type.STRING },
+          details: { type: Type.STRING, description: "評価の詳細 (日本語)" },
           tags: {
             type: Type.ARRAY,
-            items: { type: Type.STRING }
+            items: { type: Type.STRING },
+            description: "タグ (日本語)"
           }
         },
         required: ["score", "status", "details", "tags"]
