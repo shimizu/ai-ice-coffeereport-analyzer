@@ -1,7 +1,7 @@
 {
   "projects": {
-    "ai-financial-analyst": "ai-financial-analyst-9d5dd",
-    "ai-ice-coffeereport-analyzer": "ai-ice-coffeereport-analyzer"
+    "ai-ice-coffeereport-analyzer": "ai-ice-coffeereport-analyzer",
+    "default": "ai-ice-coffeereport-analyzer"
   },
   "targets": {},
   "etags": {}
