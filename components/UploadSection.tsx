@@ -29,10 +29,17 @@ export const UploadSection: React.FC<UploadSectionProps> = ({ onFileSelect, isPr
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      if (file.type === 'application/pdf') {
+      // Excelファイル (.xls, .xlsx) または PDF を許可
+      if (
+        file.type === 'application/vnd.ms-excel' ||
+        file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.name.endsWith('.xls') ||
+        file.name.endsWith('.xlsx') ||
+        file.type === 'application/pdf'
+      ) {
         onFileSelect(file);
       } else {
-        alert('PDFファイルをアップロードしてください。');
+        alert('Excelファイル(.xls, .xlsx) または PDFファイルをアップロードしてください。');
       }
     }
   }, [onFileSelect]);
@@ -58,7 +65,7 @@ export const UploadSection: React.FC<UploadSectionProps> = ({ onFileSelect, isPr
       <input 
         type="file" 
         id="file-input" 
-        accept="application/pdf" 
+        accept=".pdf, .xls, .xlsx" 
         className="hidden" 
         onChange={handleFileInput}
         disabled={isProcessing}
@@ -71,10 +78,10 @@ export const UploadSection: React.FC<UploadSectionProps> = ({ onFileSelect, isPr
       </div>
 
       <h3 className="text-lg font-semibold text-slate-900">
-        ドキュメント（PDF）をアップロード
+        在庫レポート（Excel）をアップロード
       </h3>
       <p className="mt-1 text-sm text-slate-500">
-        ファイルをドラッグ＆ドロップ、またはクリックして選択
+        ファイルをドラッグ＆ドロップ、またはクリックして選択 (.xls, .xlsx)
       </p>
     </div>
   );

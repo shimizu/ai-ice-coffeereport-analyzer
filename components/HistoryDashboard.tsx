@@ -76,7 +76,7 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
                 <div className="truncate font-medium">{doc.title || doc.id}</div>
                 <div className="flex justify-between mt-1 text-xs opacity-70">
                    <span>{doc.category || 'No Category'}</span>
-                   <span>{new Date(Number(doc.date) || Date.now()).toLocaleDateString()}</span> 
+                   <span>{doc.date || new Date().toLocaleDateString()}</span> 
                 </div>
               </button>
             ))}

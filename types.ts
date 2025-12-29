@@ -15,12 +15,48 @@ export interface DocumentMetadata {
 
 /**
  * Geminiによって抽出された構造化データ
- * テンプレート利用者がここを自由に拡張することを想定
+ * コーヒー在庫レポート専用
  */
-export interface ExtractedData {
-  [key: string]: any;  // 汎用的なキーバリュー
-  summary: string;     // ドキュメントの要約
-  key_points: string[]; // 重要ポイントのリスト
+export interface CoffeeStockReport {
+  report_date: string;     // レポートの日付 (YYYY-MM-DD)
+  total_bags: number;      // 総在庫数 (Bags)
+  
+  // 倉庫別在庫
+  warehouses: {
+    name: string;          // 倉庫名 (例: ANTWERP, HAMBURG)
+    bags: number;          // 在庫数
+  }[];
+
+  // 格付け結果 (Grading Results)
+  grading: {
+    passed: number;        // 合格数
+    failed: number;        // 不合格数
+    total_graded: number;  // 総格付け数
+    pending?: number;      // 審査待ち (オプション)
+  };
+  
+  // --- シニアストラテジスト分析用フィールド ---
+  executive_summary: {
+    sentiment: "Strong Bullish" | "Bullish" | "Neutral" | "Bearish" | "Strong Bearish";
+    headline: string;
+    text: string;
+  };
+
+  key_metrics: {
+    fresh_vs_transition_ratio: string;
+    change_from_previous: string;
+  };
+
+  deep_dive_analysis: {
+    geo_logistics_risk: string;
+    supply_demand_insight: string;
+  };
+
+  engineering_suggestions: string[];
+  // ----------------------------------------
+
+  summary: string;         // レポートの要約 (互換性のため維持)
+  key_points: string[];    // 重要ポイントのリスト (互換性のため維持)
 }
 
 /**
@@ -39,7 +75,7 @@ export interface AnalysisEvaluation {
 export interface AnalysisResult {
   id: string;               // Firestore ドキュメント ID
   metadata: DocumentMetadata;
-  extracted_data: ExtractedData;
+  extracted_data: CoffeeStockReport;
   evaluation: AnalysisEvaluation;
   timestamp: number;        // 解析実行時刻
 }

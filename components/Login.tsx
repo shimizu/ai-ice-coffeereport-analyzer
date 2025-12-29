@@ -13,10 +13,10 @@ export const Login: React.FC = () => {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg border border-slate-200 text-center">
         <div>
           <h2 className="mt-6 text-3xl font-extrabold text-slate-900">
-            AI Document Analyzer
+            Coffee Stock Intelligence
           </h2>
           <p className="mt-2 text-sm text-slate-600">
-            利用するにはログインしてください
+            AI在庫分析システムを利用するにはログインしてください
           </p>
         </div>
         <div className="mt-8">

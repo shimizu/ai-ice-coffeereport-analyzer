@@ -91,7 +91,7 @@ const MainContent: React.FC = () => {
                 </svg>
               </div>
               <span className="font-bold text-xl tracking-tight text-slate-900 hidden sm:block">
-                AI Document Analyzer
+                Coffee Stock Intelligence
               </span>
             </div>
             
@@ -124,7 +124,7 @@ const MainContent: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="hidden md:flex items-center text-xs font-medium px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">
                   <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-500"></span>
-                  {backendConnected ? 'Connected' : 'Disconnected'}
+                  {backendConnected ? 'データベース接続中' : 'オフライン'}
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -155,11 +155,11 @@ const MainContent: React.FC = () => {
               <div className="max-w-3xl mx-auto text-center space-y-8 mt-12 animate-fade-in-up">
                  <div className="space-y-4">
                    <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-                     AIによるドキュメント自動解析
+                     AI コーヒー在庫インテリジェンス
                    </h1>
                    <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                     分析したいPDFファイルをアップロードしてください。<br/>
-                     AIが内容を要約し、重要なデータを抽出・評価します。
+                     コーヒー認証在庫レポート（Excel）をアップロードしてください。<br/>
+                     シニア・コモディティ・ストラテジストAIが、市場への影響と需給バランスを分析します。
                    </p>
                  </div>
 
