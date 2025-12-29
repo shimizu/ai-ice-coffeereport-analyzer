@@ -35,20 +35,26 @@ app.use(bodyParser.json({ limit: '50mb' }));
 
 /**
  * Firebase ID Token 検証ミドルウェア
+ * 開発環境では認証をスキップするフォールバックを追加
  */
 const validateFirebaseIdToken = async (req, res, next) => {
-  if ((!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) &&
-      !(req.cookies && req.cookies.__session)) {
-    res.status(403).send('Unauthorized');
-    return;
-  }
+  // ローカル開発環境でのバイパス設定
+  // server.js から起動された場合などはここでスルーさせる
+  const isDevelopment = !process.env.FUNCTION_NAME; 
 
+  const authHeader = req.headers.authorization;
   let idToken;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-    idToken = req.headers.authorization.split('Bearer ')[1];
-  } else if(req.cookies) {
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    idToken = authHeader.split('Bearer ')[1];
+  } else if (req.cookies && req.cookies.__session) {
     idToken = req.cookies.__session;
   } else {
+    if (isDevelopment) {
+      console.warn("Auth skipped in development mode (No token provided)");
+      req.user = { uid: 'dev-user', name: 'Developer', email: 'dev@example.com' };
+      return next();
+    }
     res.status(403).send('Unauthorized');
     return;
   }
@@ -58,6 +64,12 @@ const validateFirebaseIdToken = async (req, res, next) => {
     req.user = decodedIdToken;
     next();
   } catch (error) {
+    if (isDevelopment) {
+      console.warn("Auth token verification failed, but skipping in development mode:", error.message);
+      req.user = { uid: 'dev-user', name: 'Developer', email: 'dev@example.com' };
+      return next();
+    }
+    console.error('Error while verifying Firebase ID token:', error);
     res.status(403).send('Unauthorized');
   }
 };
