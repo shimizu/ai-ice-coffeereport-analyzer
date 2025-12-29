@@ -10,19 +10,32 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { readFileSync, existsSync } from 'fs';
 
-const serviceAccountPath = './service-account.json';
+const serviceAccountPaths = [
+  './service-account.json',
+  './functions/service-account.json'
+];
+
+let serviceAccount = null;
+
+for (const path of serviceAccountPaths) {
+  if (existsSync(path)) {
+    try {
+      serviceAccount = JSON.parse(readFileSync(path, 'utf8'));
+      console.log(`Loaded service account from: ${path}`);
+      break;
+    } catch (e) {
+      console.warn(`Failed to parse service account at ${path}:`, e);
+    }
+  }
+}
 
 if (getApps().length === 0) {
-  if (existsSync(serviceAccountPath)) {
-    try {
-      const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
-      initializeApp({
-        credential: cert(serviceAccount)
-      });
-    } catch (e) {
-      initializeApp();
-    }
+  if (serviceAccount) {
+    initializeApp({
+      credential: cert(serviceAccount)
+    });
   } else {
+    console.log('No service account found, using default credentials');
     initializeApp();
   }
 }
@@ -35,26 +48,20 @@ app.use(bodyParser.json({ limit: '50mb' }));
 
 /**
  * Firebase ID Token 検証ミドルウェア
- * 開発環境では認証をスキップするフォールバックを追加
  */
 const validateFirebaseIdToken = async (req, res, next) => {
-  // ローカル開発環境でのバイパス設定
-  // server.js から起動された場合などはここでスルーさせる
-  const isDevelopment = !process.env.FUNCTION_NAME; 
+  if ((!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) &&
+      !(req.cookies && req.cookies.__session)) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
 
-  const authHeader = req.headers.authorization;
   let idToken;
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    idToken = authHeader.split('Bearer ')[1];
-  } else if (req.cookies && req.cookies.__session) {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    idToken = req.headers.authorization.split('Bearer ')[1];
+  } else if(req.cookies) {
     idToken = req.cookies.__session;
   } else {
-    if (isDevelopment) {
-      console.warn("Auth skipped in development mode (No token provided)");
-      req.user = { uid: 'dev-user', name: 'Developer', email: 'dev@example.com' };
-      return next();
-    }
     res.status(403).send('Unauthorized');
     return;
   }
@@ -64,12 +71,6 @@ const validateFirebaseIdToken = async (req, res, next) => {
     req.user = decodedIdToken;
     next();
   } catch (error) {
-    if (isDevelopment) {
-      console.warn("Auth token verification failed, but skipping in development mode:", error.message);
-      req.user = { uid: 'dev-user', name: 'Developer', email: 'dev@example.com' };
-      return next();
-    }
-    console.error('Error while verifying Firebase ID token:', error);
     res.status(403).send('Unauthorized');
   }
 };
