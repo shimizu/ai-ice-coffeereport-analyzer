@@ -1,0 +1,5 @@
+{
+  "name": "AI 財務分析アナリスト",
+  "description": "Gemini 2.0 Flashを使用して決算短信（PDF）からデータを抽出し、リスク検知とトレンド可視化を行うインテリジェントな財務分析ツール。",
+  "requestFramePermissions": []
+}
