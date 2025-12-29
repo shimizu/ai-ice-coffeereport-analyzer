@@ -136,16 +136,11 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
             },
             required: ["geo_logistics_risk", "supply_demand_insight"]
           },
-          engineering_suggestions: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "エンジニア向け可視化・データ取得提案 (日本語)"
-          },
           // 互換性維持のためのフィールド
           summary: { type: Type.STRING, description: "全体要約 (日本語)" },
           key_points: { type: Type.ARRAY, items: { type: Type.STRING }, description: "重要ポイント (日本語)" }
         },
-        required: ["report_date", "total_bags", "warehouses", "grading", "executive_summary", "key_metrics", "deep_dive_analysis", "engineering_suggestions", "summary", "key_points"]
+        required: ["report_date", "total_bags", "warehouses", "grading", "executive_summary", "key_metrics", "deep_dive_analysis", "summary", "key_points"]
       },
       evaluation: {
         type: Type.OBJECT,

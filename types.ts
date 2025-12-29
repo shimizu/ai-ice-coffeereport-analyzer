@@ -54,9 +54,6 @@ export interface CoffeeStockReport {
     supply_demand_insight: string;
   };
 
-  engineering_suggestions: string[];
-  // ----------------------------------------
-
   summary: string;         // レポートの要約 (互換性のため維持)
   key_points: string[];    // 重要ポイントのリスト (互換性のため維持)
 }

@@ -182,27 +182,8 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
             </div>
         </div>
 
-        {/* Right: Engineering & Key Points */}
+        {/* Right: Key Points */}
         <div className="lg:col-span-1 space-y-6">
-            
-            {/* Engineering Suggestions */}
-            <div className="bg-slate-800 text-slate-200 rounded-xl shadow-sm border border-slate-700 p-6">
-                <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                    エンジニア向け提案
-                </h3>
-                <ul className="space-y-3">
-                  {extracted_data.engineering_suggestions?.map((item: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-3 text-sm">
-                      <span className="text-cyan-400 mt-0.5">➢</span>
-                      <span className="text-slate-300">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-            </div>
-
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="font-semibold text-slate-800 mb-4">重要ポイント</h3>
                 <ul className="space-y-3">
