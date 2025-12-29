@@ -76,7 +76,11 @@ export const getDocumentHistory = async (id: string) => {
   try {
     const headers = await getHeaders();
     const response = await fetch(`${API_URL}/api/history/${id}`, { headers });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Fetch history failed: ${response.status} ${response.statusText}`, errorText);
+      return [];
+    }
     return await response.json();
   } catch (e) {
     console.error("Fetch history failed", e);

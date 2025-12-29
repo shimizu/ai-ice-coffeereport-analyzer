@@ -102,14 +102,19 @@ app.get('/api/documents', validateFirebaseIdToken, async (req, res) => {
 app.get('/api/history/:id', validateFirebaseIdToken, async (req, res) => {
   try {
     const id = req.params.id;
+    // インデックスエラー回避のため、Firestore側でのソートを一時的に無効化し、JS側でソートする
     const snapshot = await db.collection('analyses')
       .where('metadata.id', '==', id)
-      .orderBy('timestamp', 'desc')
       .get();
 
     const history = snapshot.docs.map(doc => doc.data());
+    
+    // タイムスタンプの降順でソート
+    history.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
     res.json(history);
   } catch (err) {
+    console.error("History fetch error:", err);
     res.status(500).json({ error: err.message });
   }
 });
