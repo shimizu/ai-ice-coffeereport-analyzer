@@ -129,25 +129,47 @@ app.post('/api/save', validateFirebaseIdToken, async (req, res) => {
   try {
     const { metadata, extracted_data, evaluation, id, timestamp } = data;
 
+    // 重複防止のため、レポート日付(report_date)をドキュメントIDとして優先使用する
+    // これにより同じ日付のレポートは上書きされる
+    const docId = extracted_data.report_date ? extracted_data.report_date.replace(/\//g, '-') : id;
+
     const batch = db.batch();
 
     // ドキュメントメタデータの保存
-    const docRef = db.collection('documents').doc(id);
+    const docRef = db.collection('documents').doc(docId);
+    
+    // データ内のIDも統一しておく
+    const savedData = {
+      ...data,
+      id: docId, 
+      metadata: {
+        ...metadata,
+        id: docId
+      }
+    };
+
     batch.set(docRef, {
-      ...metadata,
+      ...savedData.metadata,
       timestamp: timestamp || Date.now(),
-      last_evaluation: evaluation.status
+      last_evaluation: evaluation.status,
+      // 検索用にトップレベルにもIDと日付を持たせる
+      id: docId,
+      date: extracted_data.report_date || metadata.date
     }, { merge: true });
 
     // 詳細解析結果の保存
-    const analysisRef = db.collection('analyses').doc(`${id}-${timestamp}`);
+    // 履歴として残すならタイムスタンプ付きだが、
+    // 「上書き」という要望なので、最新版のみを保持するか、あるいは「その日の最新」とするか。
+    // 要望は「上書き」なので、analysesコレクション側も日付IDで保存し、履歴を積まない（あるいは同じIDで上書きする）
+    
+    const analysisRef = db.collection('analyses').doc(docId);
     batch.set(analysisRef, {
-      ...data,
-      userId: req.user.uid // ユーザーIDを紐付け
+      ...savedData,
+      userId: req.user.uid
     });
 
     await batch.commit();
-    res.json({ success: true });
+    res.json({ success: true, id: docId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
