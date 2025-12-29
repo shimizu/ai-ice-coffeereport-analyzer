@@ -12,6 +12,9 @@ export interface DocumentMetadata {
   date?: string;       // 発行日や関連日
   author?: string;     // 作成者や発行組織
   timestamp?: number;  // 分析実行日時
+  bullish_bearish_score?: number;
+  summary_headline?: string;
+  sentiment?: string;
 }
 
 /**

@@ -84,9 +84,9 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">分析日時</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">レポート対象日</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ファイル名 / ID</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">スコア (強気/弱気)</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">エグゼクティブ・サマリー</th>
                   <th className="px-6 py-4 text-right"></th>
                 </tr>
               </thead>
@@ -101,17 +101,35 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
                   >
                     <td className="px-6 py-4">
                       <div className="text-sm font-bold text-slate-900">
-                        {formatDateTime(doc.timestamp)}
+                        {doc.date || '日時不明'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-slate-600 font-medium">
-                        {doc.date || '-'}
+                      <div className="flex items-center gap-3">
+                        <div className={`text-xs font-bold px-2 py-0.5 rounded ${
+                          (doc.bullish_bearish_score || 0) > 0 ? 'bg-emerald-100 text-emerald-800' :
+                          (doc.bullish_bearish_score || 0) < 0 ? 'bg-red-100 text-red-800' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {doc.bullish_bearish_score > 0 ? '+' : ''}{doc.bullish_bearish_score ?? 0}
+                        </div>
+                        <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden relative">
+                          <div 
+                            className={`absolute top-0 bottom-0 transition-all ${
+                              (doc.bullish_bearish_score || 0) >= 0 ? 'bg-emerald-500 left-1/2' : 'bg-red-500 right-1/2'
+                            }`}
+                            style={{ 
+                              width: `${Math.abs(doc.bullish_bearish_score || 0) / 2}%`,
+                              left: (doc.bullish_bearish_score || 0) >= 0 ? '50%' : 'auto',
+                              right: (doc.bullish_bearish_score || 0) < 0 ? '50%' : 'auto'
+                            }}
+                          ></div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-xs text-slate-400 truncate max-w-xs">
-                        {doc.id}
+                      <div className="text-sm text-slate-700 font-medium line-clamp-1">
+                        {doc.summary_headline || '-'}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">

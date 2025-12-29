@@ -152,9 +152,12 @@ app.post('/api/save', validateFirebaseIdToken, async (req, res) => {
       ...savedData.metadata,
       timestamp: timestamp || Date.now(),
       last_evaluation: evaluation.status,
-      // 検索用にトップレベルにもIDと日付を持たせる
+      // 検索・一覧表示用にトップレベルにも主要データを保持させる
       id: docId,
-      date: extracted_data.report_date || metadata.date
+      date: extracted_data.report_date || metadata.date,
+      bullish_bearish_score: extracted_data.executive_summary?.bullish_bearish_score ?? 0,
+      summary_headline: extracted_data.executive_summary?.headline || "",
+      sentiment: extracted_data.executive_summary?.sentiment || "Neutral"
     }, { merge: true });
 
     // 詳細解析結果の保存
