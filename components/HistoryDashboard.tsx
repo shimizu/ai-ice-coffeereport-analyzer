@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAllDocuments, getDocumentHistory } from '../services/dbService';
 import { AnalysisResult, DocumentMetadata } from '../types';
-import { AnalysisDashboard } from './AnalysisDashboard';
 
 interface HistoryDashboardProps {
   onSelectHistory: (data: AnalysisResult) => void;
@@ -10,9 +9,7 @@ interface HistoryDashboardProps {
 export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHistory }) => {
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-  const [history, setHistory] = useState<AnalysisResult[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDocs = async () => {
@@ -28,108 +25,114 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
     fetchDocs();
   }, []);
 
-  const handleDocSelect = async (docId: string) => {
-    setSelectedDocId(docId);
-    setLoadingHistory(true);
+  const handleDocClick = async (docId: string) => {
+    setProcessingId(docId);
     try {
       const data = await getDocumentHistory(docId);
-      setHistory(data);
+      if (data && data.length > 0) {
+        onSelectHistory(data[0]);
+      } else {
+        alert("分析データが見つかりませんでした。");
+      }
     } catch (e) {
       console.error(e);
+      alert("データの取得に失敗しました。");
     } finally {
-      setLoadingHistory(false);
+      setProcessingId(null);
     }
   };
 
+  const formatDateTime = (ts?: number) => {
+    if (!ts) return '日時不明';
+    return new Date(ts).toLocaleString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading history...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center p-20 space-y-4">
+        <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+        <p className="text-slate-500">履歴を読み込み中...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-900">分析履歴</h2>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
-        {/* Sidebar: Document List */}
-        <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden max-h-[600px] flex flex-col">
-          <div className="p-4 border-b border-slate-100 bg-slate-50">
-            <h3 className="font-semibold text-slate-700">ドキュメント一覧</h3>
-            <p className="text-xs text-slate-500 mt-1">{documents.length} files analyzed</p>
-          </div>
-          <div className="overflow-y-auto flex-1 p-2 space-y-1">
-            {documents.length === 0 && (
-              <div className="p-4 text-sm text-slate-400 text-center">No history found.</div>
-            )}
-            {documents.map((doc) => (
-              <button
-                key={doc.id}
-                onClick={() => handleDocSelect(doc.id)}
-                className={`w-full text-left p-3 rounded-lg text-sm transition-colors ${
-                  selectedDocId === doc.id 
-                    ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100' 
-                    : 'text-slate-600 hover:bg-slate-50 border border-transparent'
-                }`}
-              >
-                <div className="truncate font-medium">{doc.title || doc.id}</div>
-                <div className="flex justify-between mt-1 text-xs opacity-70">
-                   <span>{doc.category || 'No Category'}</span>
-                   <span>{doc.date || new Date().toLocaleDateString()}</span> 
-                </div>
-              </button>
-            ))}
-          </div>
+    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+      <div className="flex justify-between items-end pb-4 border-b border-slate-200">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">分析履歴</h2>
+          <p className="text-sm text-slate-500 mt-1">過去の認証在庫レポート分析一覧</p>
         </div>
-
-        {/* Main: History Details */}
-        <div className="lg:col-span-3">
-          {!selectedDocId ? (
-            <div className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 p-12 text-center h-full flex flex-col items-center justify-center text-slate-400">
-              <svg className="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <p>左側のリストからドキュメントを選択してください</p>
-            </div>
-          ) : loadingHistory ? (
-            <div className="p-12 text-center text-slate-500">Loading details...</div>
-          ) : (
-            <div className="space-y-6">
-              {history.map((record, idx) => (
-                <div key={idx} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                  <div className="bg-slate-50 px-6 py-3 border-b border-slate-100 flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-600">
-                      {new Date(record.timestamp).toLocaleString()}
-                    </span>
-                    <button 
-                      onClick={() => onSelectHistory(record)}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      詳細を見る →
-                    </button>
-                  </div>
-                  <div className="p-6">
-                    <p className="text-slate-700 line-clamp-3 mb-4">{record.extracted_data.summary}</p>
-                    <div className="flex gap-2">
-                      <span className={`px-2 py-1 text-xs rounded border ${
-                        record.evaluation.status === 'positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                        record.evaluation.status === 'negative' ? 'bg-red-50 text-red-700 border-red-100' :
-                        'bg-slate-50 text-slate-700 border-slate-100'
-                      }`}>
-                        {record.evaluation.status.toUpperCase()}
-                      </span>
-                      <span className="px-2 py-1 text-xs rounded bg-slate-50 text-slate-600 border border-slate-100">
-                        Score: {record.evaluation.score}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="text-sm font-medium text-slate-500">
+          全 {documents.length} 件
         </div>
       </div>
+
+      {documents.length === 0 ? (
+        <div className="bg-white rounded-xl border-2 border-dashed border-slate-200 p-16 text-center text-slate-400">
+           <p>分析履歴がありません。</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">分析日時</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">レポート対象日</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ファイル名 / ID</th>
+                  <th className="px-6 py-4 text-right"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {documents.map((doc) => (
+                  <tr 
+                    key={doc.id}
+                    onClick={() => !processingId && handleDocClick(doc.id)}
+                    className={`group cursor-pointer transition-colors ${
+                      processingId === doc.id ? 'bg-blue-50' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-bold text-slate-900">
+                        {formatDateTime(doc.timestamp)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-slate-600 font-medium">
+                        {doc.date || '-'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-xs text-slate-400 truncate max-w-xs">
+                        {doc.id}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {processingId === doc.id ? (
+                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin ml-auto"></div>
+                      ) : (
+                        <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity text-sm font-bold flex items-center justify-end">
+                          開く
+                          <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -103,8 +103,9 @@ app.get('/api/history/:id', validateFirebaseIdToken, async (req, res) => {
   try {
     const id = req.params.id;
     // インデックスエラー回避のため、Firestore側でのソートを一時的に無効化し、JS側でソートする
+    // 検索条件も metadata.id ではなくトップレベルの id に変更（保存されているデータに id がある前提）
     const snapshot = await db.collection('analyses')
-      .where('metadata.id', '==', id)
+      .where('id', '==', id)
       .get();
 
     const history = snapshot.docs.map(doc => doc.data());

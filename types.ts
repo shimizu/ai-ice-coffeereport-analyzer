@@ -11,6 +11,7 @@ export interface DocumentMetadata {
   category?: string;   // カテゴリ (例: レポート, 請求書, 論文)
   date?: string;       // 発行日や関連日
   author?: string;     // 作成者や発行組織
+  timestamp?: number;  // 分析実行日時
 }
 
 /**
@@ -38,6 +39,7 @@ export interface CoffeeStockReport {
   // --- シニアストラテジスト分析用フィールド ---
   executive_summary: {
     sentiment: "Strong Bullish" | "Bullish" | "Neutral" | "Bearish" | "Strong Bearish";
+    bullish_bearish_score: number; // -100 (Strong Bearish) to 100 (Strong Bullish)
     headline: string;
     text: string;
   };

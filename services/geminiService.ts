@@ -44,6 +44,7 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
 
     # Objective
     提供されたCSV/テキストデータに基づき、単なる数値報告ではなく、**「市場価格にとって強気（Bullish）か弱気（Bearish）か」「異常値（Anomaly）はどこか」**を明確にしたインサイトを提供してください。
+    また、市場へのインパクトを -100（超弱気）から +100（超強気）のスコアで定量評価してください。
 
     # Analysis Framework (The 11 Pillars)
     以下の11の視点を考慮してデータを読み解いてください。データに含まれない項目については、他の数値から論理的に推論するか、データ欠損として扱ってください。
@@ -113,10 +114,11 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
             type: Type.OBJECT,
             properties: {
               sentiment: { type: Type.STRING, enum: ["Strong Bullish", "Bullish", "Neutral", "Bearish", "Strong Bearish"] },
+              bullish_bearish_score: { type: Type.NUMBER, description: "-100(Bearish) to 100(Bullish)" },
               headline: { type: Type.STRING, description: "最大の注目点" },
               text: { type: Type.STRING, description: "要約テキスト" }
             },
-            required: ["sentiment", "headline", "text"]
+            required: ["sentiment", "bullish_bearish_score", "headline", "text"]
           },
           key_metrics: {
             type: Type.OBJECT,

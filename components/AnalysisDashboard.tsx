@@ -42,11 +42,38 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
         'bg-slate-50 border-slate-400'
       }`}>
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
-          <div>
+          <div className="flex-1">
             <h3 className="text-sm font-bold tracking-wider text-slate-500 uppercase mb-1">エグゼクティブ・サマリー</h3>
-            <h2 className="text-2xl font-bold text-slate-900">{extracted_data.executive_summary?.headline}</h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">{extracted_data.executive_summary?.headline}</h2>
+            
+            {/* Bullish/Bearish Score Meter */}
+            <div className="mb-4 max-w-md">
+              <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1">
+                <span className="text-red-600">Bearish (-100)</span>
+                <span className="text-slate-400">Neutral (0)</span>
+                <span className="text-emerald-600">Bullish (+100)</span>
+              </div>
+              <div className="relative h-4 bg-slate-200 rounded-full overflow-hidden">
+                {/* Gradient Background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-slate-200 to-emerald-500 opacity-30"></div>
+                {/* Center Marker */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-400"></div>
+                {/* Score Marker */}
+                <div 
+                  className="absolute top-0 bottom-0 w-2 h-4 bg-slate-800 rounded-sm shadow transition-all duration-1000 ease-out"
+                  style={{ 
+                    left: `${50 + ((extracted_data.executive_summary?.bullish_bearish_score || 0) / 2)}%`,
+                    transform: 'translateX(-50%)'
+                  }}
+                ></div>
+              </div>
+              <div className="text-center mt-1 font-bold text-sm text-slate-700">
+                Score: {extracted_data.executive_summary?.bullish_bearish_score ?? 0}
+              </div>
+            </div>
           </div>
-          <div className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap ${
+
+          <div className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap self-start ${
             extracted_data.executive_summary?.sentiment.includes('Bullish') ? 'bg-emerald-100 text-emerald-800' :
             extracted_data.executive_summary?.sentiment.includes('Bearish') ? 'bg-red-100 text-red-800' :
             'bg-slate-200 text-slate-800'
