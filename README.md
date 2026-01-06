@@ -1,29 +1,30 @@
-# AI Document Analysis Template
+# Coffee Certified Stock Analyzer
 
-Gemini API と Firebase を活用した、汎用的なドキュメント（PDF）解析アプリケーションのテンプレートです。
-PDFをアップロードすると、AIが要約・データ抽出・評価を行い、結果をデータベース（Firestore）に保存して履歴管理できます。
+Gemini API と Firebase を活用した、コーヒー認証在庫レポート分析アプリケーションです。
+Excel形式のレポートをアップロードすると、AIが「シニア・コモディティ・ストラテジスト」として分析し、需給インサイト、強気/弱気スコア、在庫データを抽出してデータベース（Firestore）に保存・履歴管理します。
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ## 特徴
 
-*   **AI解析**: Google Gemini 2.0 Flash を使用してPDFを解析。要約、キーポイント抽出、スコアリングを自動で行います。
+*   **AI解析**: Google Gemini 2.0 Flash を使用してExcelレポートを解析。
+    *   **専門的インサイト**: 単なるデータ抽出だけでなく、市場へのインパクト（Bullish/Bearish）を-100〜+100でスコアリング。
+    *   **詳細分析**: 地理的・物流リスク、需給バランス、品質構造の変化を日本語で解説。
+*   **Excel対応**: `.xls` / `.xlsx` ファイルを直接解析。
 *   **認証**: Firebase Authentication (Google Sign-In) によるセキュアなアクセス制御。
-*   **データ保存**: 解析結果は Cloud Firestore にJSON形式で構造化して保存されます。
-*   **履歴管理**: 過去の解析結果を一覧表示し、いつでも詳細を確認できます。
-*   **サーバーレス**: Firebase Hosting と Cloud Functions で動作するため、インフラ管理が不要です。
+*   **データ保存**: 解析結果は Cloud Firestore に構造化データとして保存。レポート日付をキーとして重複を管理。
+*   **可視化**: 
+    *   強気/弱気スコアメーター
+    *   倉庫別在庫シェアテーブル
+    *   過去の分析履歴一覧
+*   **サーバーレス**: Firebase Hosting と Cloud Functions で動作。
 
-## テンプレートとしてのカスタマイズ方法
-
-このプロジェクトは、ドキュメント解析アプリの「ボイラープレート」として設計されています。
-自身の用途（請求書処理、契約書レビュー、論文要約など）に合わせて、以下の部分をカスタマイズしてください。
-
-1.  **プロンプトと抽出データの定義** (`services/geminiService.ts`, `types.ts`):
-    *   AIに抽出させたい項目（日付、金額、特定の条項など）に合わせて、`responseSchema` と `Prompt` を変更します。
-    *   対応する型定義 (`ExtractedData` interface) を更新します。
-
-2.  **UIの調整** (`components/AnalysisDashboard.tsx`):
-    *   抽出したデータに合わせて、表示コンポーネントを修正します。
+## 技術スタック
+*   **Frontend**: React, Vite, Tailwind CSS, Recharts
+*   **Backend**: Firebase Cloud Functions (Node.js), Express
+*   **Database**: Cloud Firestore
+*   **AI**: Google Gemini API (Gemini 2.0 Flash)
+*   **Parsing**: xlsx (SheetJS)
 
 ## セットアップ手順
 
@@ -67,7 +68,8 @@ firebase deploy
 
 ## ディレクトリ構成
 *   `src/`: フロントエンド (React)
-    *   `services/geminiService.ts`: AI解析ロジック（プロンプトはここにあります）
+    *   `services/geminiService.ts`: AI解析ロジック（ストラテジストプロンプト含む）
+    *   `types.ts`: コーヒー在庫レポート専用の型定義
 *   `functions/`: バックエンド (Cloud Functions)
     *   `app.js`: APIエンドポイント
-*   `firestore.rules`: データベースセキュリティルール
+
