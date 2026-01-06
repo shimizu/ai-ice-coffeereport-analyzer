@@ -6,6 +6,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import * as XLSX from "xlsx";
 import { AnalysisResult } from "../types";
+import { getLatestDocument } from "./dbService";
 
 /**
  * Excelファイルを分析し、構造化データと評価を返す
@@ -34,6 +35,27 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
     mimeType = "application/pdf";
   }
 
+  // 前回レポートの取得（コンテキストとして使用）
+  const previousReport = await getLatestDocument();
+  let previousContext = "";
+  
+  if (previousReport && previousReport.extracted_data) {
+    const nyStock = previousReport.extracted_data.warehouses?.find((w: any) => w.name.toUpperCase().includes("NEW YORK"))?.bags || "N/A";
+    const antStock = previousReport.extracted_data.warehouses?.find((w: any) => w.name.toUpperCase().includes("ANTWERP"))?.bags || "N/A";
+
+    previousContext = `
+    === PREVIOUS REPORT CONTEXT (Reference for Trend Analysis) ===
+    Date: ${previousReport.extracted_data.report_date}
+    Total Bags: ${previousReport.extracted_data.total_bags}
+    Sentiment Score: ${previousReport.extracted_data.executive_summary?.bullish_bearish_score}
+    Sentiment: ${previousReport.extracted_data.executive_summary?.sentiment}
+    NY Warehouse Stock: ${nyStock}
+    Antwerp Warehouse Stock: ${antStock}
+    Key Insight: ${previousReport.extracted_data.executive_summary?.headline}
+    ============================================================
+    `;
+  }
+
   /**
    * Gemini API へのプロンプト (コーヒー在庫レポート専用・高度分析版)
    */
@@ -45,6 +67,17 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
     # Objective
     提供されたCSV/テキストデータに基づき、単なる数値報告ではなく、**「市場価格にとって強気（Bullish）か弱気（Bearish）か」「異常値（Anomaly）はどこか」**を明確にしたインサイトを提供してください。
     また、市場へのインパクトを -100（超弱気）から +100（超強気）のスコアで定量評価してください。
+
+    # Context (Previous Analysis)
+    ${previousContext ? `
+    **前回のレポートデータが提供されています（PREVIOUS REPORT CONTEXT）。**
+    今回のデータと前回データを比較し、以下の点について必ず言及してください（前回比、前日比など）：
+    1.  **総在庫のトレンド:** 前回と比較して増えているか減っているか。
+    2.  **NY倉庫在庫の変化:** 最重要ポイントとして比較してください。
+    3.  **センチメントの変化:** 前回よりスコアが変動した場合、その要因（Transition比率の変化や特定倉庫の動きなど）を説明してください。
+    ` : `
+    ※ 今回は前回データが存在しない（または取得できない）ため、単発のデータとして分析してください。
+    `}
 
     # Analysis Framework (The 11 Pillars & Special Insights)
     以下の視点を考慮してデータを読み解いてください。

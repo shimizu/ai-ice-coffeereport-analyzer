@@ -121,6 +121,30 @@ app.get('/api/history/:id', validateFirebaseIdToken, async (req, res) => {
 });
 
 /**
+ * 最新の解析結果を1件取得（前回データとの比較用）
+ */
+app.get('/api/latest', validateFirebaseIdToken, async (req, res) => {
+  try {
+    // timestampで降順ソートし、最新の1件を取得
+    // analysesコレクションには全データが入っている
+    const snapshot = await db.collection('analyses')
+      .orderBy('timestamp', 'desc')
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) {
+      return res.json(null); // データがない場合はnullを返す
+    }
+
+    const latestDoc = snapshot.docs[0].data();
+    res.json(latestDoc);
+  } catch (err) {
+    console.error("Fetch latest analysis failed:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * 解析結果を保存
  */
 app.post('/api/save', validateFirebaseIdToken, async (req, res) => {

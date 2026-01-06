@@ -87,3 +87,22 @@ export const getDocumentHistory = async (id: string) => {
     return [];
   }
 };
+
+/**
+ * 最新の解析結果を取得 (前回データ比較用)
+ */
+export const getLatestDocument = async (): Promise<AnalysisResult | null> => {
+  try {
+    const headers = await getHeaders();
+    const response = await fetch(`${API_URL}/api/latest`, { headers });
+    if (!response.ok) {
+      // 404等はデータなしとして扱う
+      return null;
+    }
+    const data = await response.json();
+    return data; // データがない場合はnullが返ってくる想定
+  } catch (e) {
+    console.error("Fetch latest document failed", e);
+    return null;
+  }
+};
