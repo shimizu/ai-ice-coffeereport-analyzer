@@ -2,14 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { getAllDocuments, getDocumentHistory } from '../services/dbService';
 import { AnalysisResult, DocumentMetadata } from '../types';
 
+/**
+ * 履歴表示ダッシュボードコンポーネント
+ * 
+ * 役割:
+ * Firestoreに保存されている過去の分析結果一覧を表示し、詳細画面への遷移を提供します。
+ * 
+ * データの流れ:
+ * 1. マウント時に getAllDocuments() でドキュメントメタデータ一覧を取得。
+ * 2. ユーザーが行をクリックすると、getDocumentHistory(id) で詳細データを取得。
+ * 3. onSelectHistory コールバックを通じて、親コンポーネント（App.tsx）に選択されたデータを渡し、表示を切り替える。
+ * 
+ * 拡張ポイント:
+ * - ページネーションの実装: 現状は全件取得しているため、件数が増えた場合は limit/offset 処理が必要。
+ * - フィルタリング/検索: 日付範囲やキーワード検索機能の追加。
+ */
+
 interface HistoryDashboardProps {
-  onSelectHistory: (data: AnalysisResult) => void;
+  onSelectHistory: (data: AnalysisResult) => void; // 履歴アイテム選択時のコールバック
 }
 
 export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHistory }) => {
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null); // 現在詳細読み込み中のID
 
   useEffect(() => {
     const fetchDocs = async () => {
@@ -25,11 +41,16 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
     fetchDocs();
   }, []);
 
+  /**
+   * 履歴行クリック時のハンドラ
+   * 詳細データを取得して親コンポーネントに通知する
+   */
   const handleDocClick = async (docId: string) => {
     setProcessingId(docId);
     try {
       const data = await getDocumentHistory(docId);
       if (data && data.length > 0) {
+        // 履歴データは配列で返ってくるが、今回は最新(または特定)の1件を表示対象とする
         onSelectHistory(data[0]);
       } else {
         alert("分析データが見つかりませんでした。");
@@ -105,6 +126,7 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
                       </div>
                     </td>
                     <td className="px-6 py-4">
+                      {/* 強気(Bullish)/弱気(Bearish)の簡易バー表示 */}
                       <div className="flex items-center gap-3">
                         <div className={`text-xs font-bold px-2 py-0.5 rounded ${
                           (doc.bullish_bearish_score || 0) > 0 ? 'bg-emerald-100 text-emerald-800' :

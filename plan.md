@@ -12,23 +12,24 @@ AI分析時に、Firestoreに保存されている「最新（前回）の分析
 ## タスクリスト
 
 ### Phase 1: データ取得ロジックの実装
-- [ ] **`services/dbService.ts` への機能追加**:
+- [x] **`services/dbService.ts` への機能追加**:
     - `getLatestDocument()` 関数を実装。
     - Firestoreの `documents` コレクションから、`report_date` (または `timestamp`) の降順で1件だけデータを取得するクエリを作成。
     - エラーハンドリング（初回実行時など、データが存在しない場合の考慮）。
 
 ### Phase 2: AI分析サービスの拡張
-- [ ] **`services/geminiService.ts` の改修**:
+- [x] **`services/geminiService.ts` の改修**:
     - `analyzeDocument` 関数内で `getLatestDocument()` を呼び出す。
     - プロンプトの構築ロジックを変更し、前回データが存在する場合は `=== PREVIOUS REPORT CONTEXT ===` セクションを追加。
     - 比較すべき重要項目（総在庫、Transition比率、スコア、主要倉庫在庫）をAIに提示。
     - プロンプトの指示（Instructions）に、「前回データとの比較に基づき、変化の方向性を評価すること」を追加。
 
 ### Phase 3: 動作確認
-- [ ] **テスト実行**:
+- [x] **テスト実行**:
     - 1回目：新規データのアップロード（比較対象なし）。
     - 2回目：日付の新しいデータのアップロード（前回データとの比較が反映されているか確認）。
     - ログや出力結果で、前回データがプロンプトに含まれているか確認。
+
 
 ## 期待される効果
 - 「前回よりTransition比率が急増しており、需給逼迫感は見た目より緩和している」といった、動的な分析が可能になる。

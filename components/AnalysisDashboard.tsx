@@ -1,17 +1,35 @@
 import React from 'react';
 import { AnalysisResult } from '../types';
 
+/**
+ * 分析結果ダッシュボードコンポーネント
+ * 
+ * 役割:
+ * Gemini APIによって解析されたコーヒー認証在庫レポートのデータを視覚化して表示します。
+ * ストラテジストによる分析コメント、強気/弱気スコア、KPIカード、倉庫別データなどを
+ * 直感的に理解できるUIで提供します。
+ * 
+ * 拡張ポイント:
+ * - 新しいKPIを追加したい場合は、extracted_data にフィールドを追加し、KPI Cardsセクションを修正してください。
+ * - グラフ化したいデータが増えた場合は、Rechartsなどのライブラリを導入して可視化を強化できます。
+ */
+
 interface AnalysisDashboardProps {
-  data: AnalysisResult;
-  onReset: () => void;
+  data: AnalysisResult; // 解析結果データ全量
+  onReset: () => void;  // 「別のファイルを分析」ボタンが押された時のコールバック
 }
 
 export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onReset }) => {
+  // 分割代入でデータを取り出しやすくする
   const { metadata, extracted_data, evaluation } = data;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header Section */}
+      {/* 
+        === Header Section ===
+        レポートのタイトル、日付、カテゴリを表示するヘッダー領域。
+        リセットボタンもここに配置。
+      */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -35,7 +53,11 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
         </div>
       </div>
 
-      {/* エグゼクティブ・サマリー Section */}
+      {/* 
+        === エグゼクティブ・サマリー Section ===
+        AIストラテジストによる最重要分析コメントとスコアを表示。
+        強気(Bullish)か弱気(Bearish)かによって背景色やアクセントカラーを動的に変更します。
+      */}
       <div className={`p-6 rounded-xl border-l-4 shadow-sm ${
         extracted_data.executive_summary?.sentiment.includes('Bullish') ? 'bg-emerald-50 border-emerald-500' :
         extracted_data.executive_summary?.sentiment.includes('Bearish') ? 'bg-red-50 border-red-500' :
@@ -46,7 +68,11 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
             <h3 className="text-sm font-bold tracking-wider text-slate-500 uppercase mb-1">エグゼクティブ・サマリー</h3>
             <h2 className="text-2xl font-bold text-slate-900 mb-4">{extracted_data.executive_summary?.headline}</h2>
             
-            {/* Bullish/Bearish Score Meter */}
+            {/* 
+              Bullish/Bearish Score Meter
+              -100(Bearish) から +100(Bullish) のスコアを視覚的に表現するメーター。
+              CSSの translateX を使用してマーカー位置を制御しています。
+            */}
             <div className="mb-4 max-w-md">
               <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1">
                 <span className="text-red-600">Bearish (-100)</span>
@@ -54,14 +80,15 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
                 <span className="text-emerald-600">Bullish (+100)</span>
               </div>
               <div className="relative h-4 bg-slate-200 rounded-full overflow-hidden">
-                {/* Gradient Background */}
+                {/* Gradient Background: 赤(弱気) -> 緑(強気) のグラデーション */}
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-slate-200 to-emerald-500 opacity-30"></div>
-                {/* Center Marker */}
+                {/* Center Marker: 0地点 */}
                 <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-400"></div>
-                {/* Score Marker */}
+                {/* Score Marker: 現在のスコア位置 */}
                 <div 
                   className="absolute top-0 bottom-0 w-2 h-4 bg-slate-800 rounded-sm shadow transition-all duration-1000 ease-out"
                   style={{ 
+                    // スコア(-100~100)を 0~100% の位置に変換
                     left: `${50 + ((extracted_data.executive_summary?.bullish_bearish_score || 0) / 2)}%`,
                     transform: 'translateX(-50%)'
                   }}
@@ -86,9 +113,12 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
         </p>
       </div>
 
-      {/* KPI Cards */}
+      {/* 
+        === KPI Cards Section ===
+        総在庫数、品質構造、AI信頼度などの重要指標（KPI）をカード形式で表示。
+      */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left column: stacked cards */}
+        {/* Left column: stacked cards (在庫情報) */}
         <div className="md:col-span-2 space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
               <h3 className="text-sm font-medium text-slate-500 mb-2">総認証在庫数</h3>
@@ -104,6 +134,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
                    <div className="flex justify-between items-end">
                       <span className="font-semibold text-slate-900">{extracted_data.key_metrics?.fresh_vs_transition_ratio || '-'}</span>
                    </div>
+                   {/* 簡易的なバー表示（本来は比率に応じて幅を変えるなどを検討） */}
                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                       <div className="bg-blue-500 h-full w-1/2"></div>
                    </div>
@@ -114,7 +145,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
           </div>
         </div>
 
-        {/* Right column: AI Score (full height or sticky) */}
+        {/* Right column: AI Score (分析自体の信頼度評価) */}
         <div className="md:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
              <h3 className="text-sm font-medium text-slate-500 mb-1">AI 信頼度スコア</h3>
              <div className="flex items-center gap-4">
@@ -131,9 +162,12 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Warehouse & Deep Dive */}
+        {/* 
+           Left Column: Deep Dive & Warehouse Table
+           詳細分析と倉庫別データテーブル
+        */}
         <div className="lg:col-span-2 space-y-6">
-            {/* 詳細分析 Analysis */}
+            {/* 詳細分析 (Deep Dive) - 地理的リスクや需給インサイト */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -153,6 +187,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
                 </div>
             </div>
 
+            {/* 倉庫別在庫テーブル */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
                     <h3 className="font-semibold text-slate-800">倉庫別在庫内訳</h3>
@@ -182,7 +217,10 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ data, onRe
             </div>
         </div>
 
-        {/* Right: Key Points */}
+        {/* 
+           Right Column: Key Points & Tags
+           箇条書きの重要ポイントと、検索用のタグ
+        */}
         <div className="lg:col-span-1 space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="font-semibold text-slate-800 mb-4">重要ポイント</h3>
