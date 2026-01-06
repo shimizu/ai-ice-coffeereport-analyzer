@@ -1,5 +1,9 @@
 /**
- * Express バックエンドアプリケーション (汎用ドキュメント分析テンプレート版)
+ * Express バックエンドアプリケーション
+ * 
+ * 役割:
+ * Firebase Cloud Functions 上で動作するAPIサーバーです。
+ * Firestore へのデータの保存、取得、およびユーザー認証の検証を担当します。
  */
 
 import express from 'express';
@@ -10,6 +14,10 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { readFileSync, existsSync } from 'fs';
 
+/**
+ * Firebase Admin SDK の初期化
+ * ローカル開発環境と本番環境の両方で動作するようにサービスアカウントのパスを複数チェックします。
+ */
 const serviceAccountPaths = [
   './service-account.json',
   './functions/service-account.json'
@@ -35,6 +43,7 @@ if (getApps().length === 0) {
       credential: cert(serviceAccount)
     });
   } else {
+    // サービスアカウントが見つからない場合は、デフォルトの資格情報を使用（本番環境など）
     console.log('No service account found, using default credentials');
     initializeApp();
   }
@@ -48,6 +57,9 @@ app.use(bodyParser.json({ limit: '50mb' }));
 
 /**
  * Firebase ID Token 検証ミドルウェア
+ * 
+ * フロントエンドからのリクエストに含まれる Authorization ヘッダー（Bearerトークン）を検証し、
+ * 正当なユーザーであるかを確認します。検証に成功すると req.user にユーザー情報を格納します。
  */
 const validateFirebaseIdToken = async (req, res, next) => {
   if ((!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) &&
@@ -76,15 +88,15 @@ const validateFirebaseIdToken = async (req, res, next) => {
 };
 
 /**
- * API ルート定義
+ * ヘルスチェック
  */
-
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', db: 'Firestore' });
 });
 
 /**
- * 全ドキュメント一覧を取得
+ * 全ドキュメントのメタデータ一覧を取得
+ * ダッシュボードの履歴一覧表示に使用されます。
  */
 app.get('/api/documents', validateFirebaseIdToken, async (req, res) => {
   try {
@@ -98,19 +110,18 @@ app.get('/api/documents', validateFirebaseIdToken, async (req, res) => {
 
 /**
  * 特定ドキュメントの解析履歴を取得
+ * docId をキーに、詳細な解析結果を返します。
  */
 app.get('/api/history/:id', validateFirebaseIdToken, async (req, res) => {
   try {
     const id = req.params.id;
-    // インデックスエラー回避のため、Firestore側でのソートを一時的に無効化し、JS側でソートする
-    // 検索条件も metadata.id ではなくトップレベルの id に変更（保存されているデータに id がある前提）
     const snapshot = await db.collection('analyses')
       .where('id', '==', id)
       .get();
 
     const history = snapshot.docs.map(doc => doc.data());
     
-    // タイムスタンプの降順でソート
+    // タイムスタンプの降順でソート（最新が先頭）
     history.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
     res.json(history);
@@ -121,19 +132,18 @@ app.get('/api/history/:id', validateFirebaseIdToken, async (req, res) => {
 });
 
 /**
- * 最新の解析結果を1件取得（前回データとの比較用）
+ * 最新の解析結果を1件取得（前回データとのトレンド比較用）
+ * 日付（timestamp）が最も新しい1件を返します。
  */
 app.get('/api/latest', validateFirebaseIdToken, async (req, res) => {
   try {
-    // timestampで降順ソートし、最新の1件を取得
-    // analysesコレクションには全データが入っている
     const snapshot = await db.collection('analyses')
       .orderBy('timestamp', 'desc')
       .limit(1)
       .get();
 
     if (snapshot.empty) {
-      return res.json(null); // データがない場合はnullを返す
+      return res.json(null);
     }
 
     const latestDoc = snapshot.docs[0].data();
@@ -145,24 +155,29 @@ app.get('/api/latest', validateFirebaseIdToken, async (req, res) => {
 });
 
 /**
- * 解析結果を保存
+ * 解析結果の保存
+ * 
+ * 役割:
+ * Geminiで抽出された構造化データを Firestore の2つのコレクションに保存します。
+ * 1. 'documents': 一覧表示用の軽量なメタデータ
+ * 2. 'analyses':  詳細な解析結果全量
+ * 
+ * レポート日付(report_date)をドキュメントIDとして使用することで、同じ日のレポートは上書きされます。
  */
 app.post('/api/save', validateFirebaseIdToken, async (req, res) => {
-  const data = req.body; // AnalysisResult 型
+  const data = req.body; // AnalysisResult 型のデータ
 
   try {
     const { metadata, extracted_data, evaluation, id, timestamp } = data;
 
-    // 重複防止のため、レポート日付(report_date)をドキュメントIDとして優先使用する
-    // これにより同じ日付のレポートは上書きされる
+    // レポート日付を ID に変換 (例: 2025/12/26 -> 2025-12-26)
     const docId = extracted_data.report_date ? extracted_data.report_date.replace(/\//g, '-') : id;
 
     const batch = db.batch();
 
-    // ドキュメントメタデータの保存
+    // 1. メタデータの更新
     const docRef = db.collection('documents').doc(docId);
     
-    // データ内のIDも統一しておく
     const savedData = {
       ...data,
       id: docId, 
@@ -176,7 +191,6 @@ app.post('/api/save', validateFirebaseIdToken, async (req, res) => {
       ...savedData.metadata,
       timestamp: timestamp || Date.now(),
       last_evaluation: evaluation.status,
-      // 検索・一覧表示用にトップレベルにも主要データを保持させる
       id: docId,
       date: extracted_data.report_date || metadata.date,
       bullish_bearish_score: extracted_data.executive_summary?.bullish_bearish_score ?? 0,
@@ -184,11 +198,7 @@ app.post('/api/save', validateFirebaseIdToken, async (req, res) => {
       sentiment: extracted_data.executive_summary?.sentiment || "Neutral"
     }, { merge: true });
 
-    // 詳細解析結果の保存
-    // 履歴として残すならタイムスタンプ付きだが、
-    // 「上書き」という要望なので、最新版のみを保持するか、あるいは「その日の最新」とするか。
-    // 要望は「上書き」なので、analysesコレクション側も日付IDで保存し、履歴を積まない（あるいは同じIDで上書きする）
-    
+    // 2. 詳細データの更新
     const analysisRef = db.collection('analyses').doc(docId);
     batch.set(analysisRef, {
       ...savedData,

@@ -11,13 +11,28 @@
  * ローカル開発では server.js が同じ app.js をインポートして使用
  */
 
-import * as functions from 'firebase-functions';
-import app from './app.js';
+/**
+ * Cloud Functions エントリポイント
+ * 
+ * 役割:
+ * Firebase Cloud Functions の関数定義を行います。
+ * HTTPS リクエストを Express アプリケーション (app.js) にルーティングします。
+ */
+
+import { onRequest } from "firebase-functions/v2/https";
+import app from "./app.js";
 
 /**
- * API エンドポイント
- *
- * すべての /api/** リクエストをこの関数で処理
- * app.js で定義されたルート (/api/health, /api/companies など) が実行される
+ * api 関数
+ * 
+ * 外部からの HTTPS リクエスト（例: https://<region>-<project-id>.cloudfunctions.net/api/...）
+ * を受け取り、Express アプリに処理を委譲します。
+ * 
+ * 設定:
+ * - memory: 512MiB (解析処理などでメモリが必要な場合は調整)
+ * - cors: true (クロスドメインリクエストを許可)
  */
-export const api = functions.https.onRequest(app);
+export const api = onRequest({
+    memory: "512MiB",
+    cors: true 
+}, app);
