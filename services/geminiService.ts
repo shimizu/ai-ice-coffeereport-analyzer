@@ -68,6 +68,36 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
     提供されたCSV/テキストデータに基づき、単なる数値報告ではなく、**「市場価格にとって強気（Bullish）か弱気（Bearish）か」「異常値（Anomaly）はどこか」**を明確にしたインサイトを提供してください。
     また、市場へのインパクトを -100（超弱気）から +100（超強気）のスコアで定量評価してください。
 
+    # Mandatory Rules (ICE Coffee "C" Inventory Analysis)
+    在庫評価は「量」ではなく「実質的な供給可能性」を最重視してください。以下は厳守事項です。
+    1. TOTAL BAGS CERTIFIED の増減だけで強弱判断をしない。
+    2. 必ず内訳を分離評価すること:
+       - Transition Bags Certified
+       - 非Transition（実質使用可能在庫）
+       - Pending Grading
+       - Failed Grading
+    3. Transition Bags は名目在庫として扱い、供給余力を過大評価しない。
+       - Transition 比率が高い場合、在庫増を弱材料と断定しない。
+       - 在庫増加の100%が Transition なら「供給改善なし」と明記。
+    4. Grading は質的評価を必須とする。
+       - Pass増かFail増かを明示。
+       - Fail比率が高い場合、在庫増は市場に流れない前提で扱う。
+    5. ロケーションの重み付け:
+       - NY 在庫が最優先。NYが減少/横ばいなら需給はタイト寄り。
+       - ANT 偏重の在庫増は流動性が低いと評価。
+    6. 国別評価:
+       - ブラジル増加は Transition 由来なら中立〜強気、非Transition増なら弱気要因になり得る。
+       - 中米・アフリカは品質/ロット分散を考慮し数量を割り引いて評価。
+    7. Pending は「供給予備軍」ではない。
+       - Pass→Transition増、Fail→実質供給ゼロであることを明示。
+    8. 結論は必ず次の3点を分けて記述:
+       1) 見かけ上の在庫変化
+       2) 実質的に使える在庫の変化
+       3) 価格形成への影響（短期・中期）
+    9. 禁止事項:
+       - 「在庫が増えた＝弱気」の短絡結論。
+       - Transition/NY/Grading を無視した解釈。
+
     # Context (Previous Analysis)
     ${previousContext ? `
     **前回のレポートデータが提供されています（PREVIOUS REPORT CONTEXT）。**
@@ -212,7 +242,7 @@ export const analyzeDocument = async (file: File): Promise<AnalysisResult> => {
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-3-flash-preview",
       contents: { parts },
       config: {
         responseMimeType: "application/json",
