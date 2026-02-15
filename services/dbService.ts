@@ -55,17 +55,17 @@ export const saveAnalysisResult = async (data: AnalysisResult) => {
 };
 
 /**
- * 全ドキュメントの一覧を取得
+ * 全ドキュメントの一覧を取得 (ページネーション対応)
  */
-export const getAllDocuments = async () => {
+export const getAllDocuments = async (page: number = 1, limit: number = 10) => {
   try {
     const headers = await getHeaders();
-    const response = await fetch(`${API_URL}/api/documents`, { headers });
-    if (!response.ok) return [];
+    const response = await fetch(`${API_URL}/api/documents?page=${page}&limit=${limit}`, { headers });
+    if (!response.ok) return { documents: [], total: 0, totalPages: 0 };
     return await response.json();
   } catch (e) {
     console.error("Fetch documents failed", e);
-    return [];
+    return { documents: [], total: 0, totalPages: 0 };
   }
 };
 

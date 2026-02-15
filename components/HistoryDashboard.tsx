@@ -27,19 +27,38 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null); // 現在詳細読み込み中のID
 
+  // ページネーション用ステート
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     const fetchDocs = async () => {
+      setLoading(true);
       try {
-        const docs = await getAllDocuments();
-        setDocuments(docs);
+        const result = await getAllDocuments(currentPage, itemsPerPage);
+        // レスポンス形式の互換性を維持しつつステートを更新
+        if (Array.isArray(result)) {
+          setDocuments(result);
+          setTotalItems(result.length);
+          setTotalPages(1);
+        } else if (result && typeof result === 'object') {
+          setDocuments(result.documents || []);
+          setTotalPages(result.totalPages || 0);
+          setTotalItems(result.total || 0);
+        } else {
+          setDocuments([]);
+        }
       } catch (e) {
         console.error("Failed to load documents", e);
+        setDocuments([]);
       } finally {
         setLoading(false);
       }
     };
     fetchDocs();
-  }, []);
+  }, [currentPage]);
 
   /**
    * 履歴行クリック時のハンドラ
@@ -91,11 +110,11 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
           <p className="text-sm text-slate-500 mt-1">過去の認証在庫レポート分析一覧</p>
         </div>
         <div className="text-sm font-medium text-slate-500">
-          全 {documents.length} 件
+          全 {totalItems} 件
         </div>
       </div>
 
-      {documents.length === 0 ? (
+      {(documents || []).length === 0 ? (
         <div className="bg-white rounded-xl border-2 border-dashed border-slate-200 p-16 text-center text-slate-400">
            <p>分析履歴がありません。</p>
         </div>
@@ -112,7 +131,7 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {documents.map((doc) => (
+                {(documents || []).map((doc) => (
                   <tr 
                     key={doc.id}
                     onClick={() => !processingId && handleDocClick(doc.id)}
@@ -171,6 +190,36 @@ export const HistoryDashboard: React.FC<HistoryDashboardProps> = ({ onSelectHist
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+              <div className="text-sm text-slate-500">
+                <span className="font-medium text-slate-700">{totalItems}</span> 件中 
+                <span className="font-medium text-slate-700"> {(currentPage - 1) * itemsPerPage + 1}</span> 〜 
+                <span className="font-medium text-slate-700"> {Math.min(currentPage * itemsPerPage, totalItems)}</span> 件を表示
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.max(1, prev - 1)); }}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  前へ
+                </button>
+                <div className="flex items-center px-4 text-sm font-medium text-slate-600">
+                  {currentPage} / {totalPages}
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  次へ
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

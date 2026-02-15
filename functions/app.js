@@ -95,14 +95,33 @@ app.get('/api/health', (req, res) => {
 });
 
 /**
- * 全ドキュメントのメタデータ一覧を取得
- * ダッシュボードの履歴一覧表示に使用されます。
+ * 全ドキュメントのメタデータ一覧を取得 (ページネーション対応)
  */
 app.get('/api/documents', validateFirebaseIdToken, async (req, res) => {
   try {
-    const snapshot = await db.collection('documents').orderBy('timestamp', 'desc').get();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // 総件数を取得
+    const countSnapshot = await db.collection('documents').count().get();
+    const total = countSnapshot.data().count;
+
+    const snapshot = await db.collection('documents')
+      .orderBy('timestamp', 'desc')
+      .offset(offset)
+      .limit(limit)
+      .get();
+
     const documents = snapshot.docs.map(doc => doc.data());
-    res.json(documents);
+    
+    res.json({
+      documents,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
